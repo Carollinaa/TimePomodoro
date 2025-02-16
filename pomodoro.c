@@ -176,19 +176,22 @@ bool start(struct repeating_timer *t)
 {
   if (!inicializado)
   {
-    tempo_restante = 0;
     foco = true;
+    ciclos = 4;
+    ciclo_atual = 0;
+    tempo_restante = 0;
     return false;
   }
   if (tempo_restante <= 0)
   {
-    ciclo_atual++;
+    
     if (foco)
     {
       strcpy(text_fase, "Tempo de Foco");
       desenhar_sprite(matriz_foco);
       tempo_restante = tempo_em_minutos(25);
       foco = false;
+      ciclo_atual++;
     }
     else
     {
@@ -207,7 +210,6 @@ bool start(struct repeating_timer *t)
         ciclo_atual = 0;
       }
     }
-
   }
 
   // Converte segundos para MM:SS
@@ -271,9 +273,21 @@ void desenhar_sprite(int matriz[5][5][3])
 
 void desligar()
 {
+  inicializado = false;
   npClear();
   npWrite();
-  inicializado = false;
+
+  struct render_area frame_area = {
+    start_column : 0,
+    end_column : ssd1306_width - 1,
+    start_page : 0,
+    end_page : ssd1306_n_pages - 1
+  };
+
+  calculate_render_area_buffer_length(&frame_area);
+  // Zera o display
+  memset(ssd, 0, ssd1306_buffer_length);
+  render_on_display(ssd, &frame_area);
 }
 
 zerar_display(struct render_area frame_area)
@@ -351,7 +365,6 @@ int main()
     if (!gpio_get(BTN_A) && !inicializado)
     {
       inicializado = true;
-      // add_repeating_timer_ms(50, iniciar, NULL, &timer);
       add_repeating_timer_ms(-1000, start, NULL, &timer);
       sleep_ms(50);
     }
