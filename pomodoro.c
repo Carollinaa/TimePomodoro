@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
-#include "hardware/clocks.h"
 #include "hardware/pwm.h"
 #include "hardware/i2c.h"
 
@@ -32,10 +30,13 @@ int tempo_restante = 0;
 struct repeating_timer timer;
 struct repeating_timer timer2;
 
+uint8_t ssd[ssd1306_buffer_length];
+
 // Protótipos das funções (declaração antes da implementação)
 void display_text(uint8_t *ssd, char *text[]);
 void desenhar_sprite(int matriz[5][5][3]);
-uint8_t ssd[ssd1306_buffer_length];
+int tempo_em_minutos(int minutos);
+void zerar_display(struct render_area frame_area);
 
 // Definição de pixel GRB
 struct pixel_t
@@ -184,7 +185,7 @@ bool start(struct repeating_timer *t)
   }
   if (tempo_restante <= 0)
   {
-    
+
     if (foco)
     {
       strcpy(text_fase, "Tempo de Foco");
@@ -288,16 +289,18 @@ void desligar()
   // Zera o display
   memset(ssd, 0, ssd1306_buffer_length);
   render_on_display(ssd, &frame_area);
+
+char *text[20] = {
+  "   Pressione",
+  "",
+  "   O botao A",
+  "",
+  " para iniciar",
+  "",
+  "  o Pomodoro"};
+display_text(ssd, text);
 }
 
-zerar_display(struct render_area frame_area)
-{
-
-  calculate_render_area_buffer_length(&frame_area);
-  // Zera o display
-  memset(ssd, 0, ssd1306_buffer_length);
-  render_on_display(ssd, &frame_area);
-}
 
 void display_text(uint8_t *ssd, char *text[])
 {
@@ -338,14 +341,14 @@ int main()
   init_input(BTN_B);
 
   // Inicialização do i2c
-  // i2c_init(i2c1, ssd1306_i2c_clock * 1000);
+  i2c_init(i2c1, ssd1306_i2c_clock * 1000);
   gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
   gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
   gpio_pull_up(I2C_SDA);
   gpio_pull_up(I2C_SCL);
 
   // Processo de inicialização completo do OLED SSD1306
-  // ssd1306_init();
+  ssd1306_init();
 
   // Inicializa o GPIO como saída PWM
   gpio_set_function(BUZZER_PIN, GPIO_FUNC_PWM);
@@ -358,6 +361,32 @@ int main()
   npClear();
 
   npWrite(); // Escreve os dados nos LEDs.
+
+  // Preparar área de renderização para o display (ssd1306_width pixels por ssd1306_n_pages páginas)
+  struct render_area frame_area = {
+    start_column : 0,
+    end_column : ssd1306_width - 1,
+    start_page : 0,
+    end_page : ssd1306_n_pages - 1
+  };
+
+  calculate_render_area_buffer_length(&frame_area);
+
+  // zera o display inteiro
+  uint8_t ssd[ssd1306_buffer_length];
+  memset(ssd, 0, ssd1306_buffer_length);
+  render_on_display(ssd, &frame_area);
+  restart:
+
+  char *text[20] = {
+      "   Pressione",
+      "",
+      "   O botao A",
+      "",
+      " para iniciar",
+      "",
+      "  o Pomodoro"};
+  display_text(ssd, text);
 
   while (true)
   {
