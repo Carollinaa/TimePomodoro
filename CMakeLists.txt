@@ -49,7 +49,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(pomodoro pomodoro.c )
+add_executable(pomodoro pomodoro.c inc/ssd1306_i2c.c)
 
 pico_set_program_name(pomodoro "pomodoro")
 pico_set_program_version(pomodoro "0.1")
@@ -63,7 +63,7 @@ pico_enable_stdio_usb(pomodoro 1)
 
 # Add the standard library to the build
 target_link_libraries(pomodoro
-        pico_stdlib hardware_pwm)
+        pico_stdlib)
 
 # Add the standard include files to the build
 target_include_directories(pomodoro PRIVATE
@@ -74,6 +74,8 @@ target_include_directories(pomodoro PRIVATE
 target_link_libraries(pomodoro 
         hardware_pio
         hardware_clocks
+        hardware_pwm
+        hardware_i2c
         )
 
 pico_add_extra_outputs(pomodoro)
